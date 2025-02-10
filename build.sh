@@ -22,7 +22,7 @@ fi
 
 # Checkout DPDK version tag
 cd $dpdk_dir
-git checkout v19.11
+git checkout v21.11
 
 # Create the DPDK build dir
 if [[ -d $build_dir ]]; then
@@ -33,13 +33,14 @@ if [[ -d $build_dir ]]; then
 fi
 
 echo "Configuring DPDK..."
-meson -Dprefix=$install_dir build
+meson -Denable_kmods=true -Dprefix=$install_dir build
 cd build
 
 # Make DPDK, install locally
 echo "Making DPDK..."
 ninja
 sudo ninja install
+sudo ldconfig
+sudo pkg-config --modversion libdpdk
 user=$USER
 sudo chown $user $dpdk_dir -R
-

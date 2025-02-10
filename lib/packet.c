@@ -50,16 +50,31 @@ print_packet(char *bytes, size_t size)
     printf("\n");
 }
 
+// static int
+// fill_ether_header(struct rte_ether_hdr *hdr,
+//                   struct rte_ether_addr *src_mac,
+//                   struct rte_ether_addr *dst_mac)
+// {
+//     /* Dummy ethernet src & dst, type is IPv4 */
+//     memset(hdr, 0, sizeof(*hdr));
+//     hdr->ether_type = rte_cpu_to_be_16(RTE_ETHER_TYPE_IPV4);
+//     /* memcpy(&ether_hdr->src_addr, src_mac, sizeof(*src_mac));
+//     memcpy(&ether_hdr->dst_addr, dst_mac, sizeof(*dst_mac)); */
+//     return sizeof(*hdr);
+// }
+
+// Annus
 static int
 fill_ether_header(struct rte_ether_hdr *hdr,
-                  struct rte_ether_addr *src_mac,
-                  struct rte_ether_addr *dst_mac)
+                  struct ftuple *ftuple,
+                  int size)
 {
-    /* Dummy ethernet src & dst, type is IPv4 */
-    memset(hdr, 0, sizeof(*hdr));
-    hdr->ether_type = rte_cpu_to_be_16(RTE_ETHER_TYPE_IPV4);
-    /* memcpy(&ether_hdr->s_addr, src_mac, sizeof(*src_mac));
-    memcpy(&ether_hdr->d_addr, dst_mac, sizeof(*dst_mac)); */
+    // // /* Dummy ethernet src & dst, type is IPv4 */
+    // memset(hdr, 0, sizeof(*hdr));
+    // hdr->ether_type = rte_cpu_to_be_16(RTE_ETHER_TYPE_IPV4);
+    hdr->ether_type = ftuple->eth_proto;
+    memcpy(&hdr->src_addr, &ftuple->src_eth, sizeof(struct rte_ether_addr));
+    memcpy(&hdr->dst_addr, &ftuple->dst_eth, sizeof(struct rte_ether_addr));
     return sizeof(*hdr);
 }
 
@@ -190,7 +205,8 @@ void packet_generate_ftuple_raw(char *data,
     header_size = 0;
 
     ether_hdr = GET_OFFSET(data, struct rte_ether_hdr*, 0);
-    header_size += fill_ether_header(ether_hdr, src_mac, dst_mac);
+    // header_size += fill_ether_header(ether_hdr, src_mac, dst_mac);
+    header_size += fill_ether_header(ether_hdr, ftuple, size);
 
     ipv4_hdr = GET_OFFSET(data, struct rte_ipv4_hdr*, header_size);
     header_size += fill_ip_header(ipv4_hdr, ftuple, size);
@@ -249,7 +265,8 @@ packet_generate_ftuple(struct rte_mbuf *mbuf,
     }
 
     ether_hdr = rte_pktmbuf_mtod(mbuf, struct rte_ether_hdr*);
-    header_size += fill_ether_header(ether_hdr, src_mac, dst_mac);
+    // header_size += fill_ether_header(ether_hdr, src_mac, dst_mac);
+    header_size += fill_ether_header(ether_hdr, ftuple, size);
 
     ipv4_hdr = rte_pktmbuf_mtod_offset(mbuf, struct rte_ipv4_hdr*, header_size);
     header_size += fill_ip_header(ipv4_hdr, ftuple, size);

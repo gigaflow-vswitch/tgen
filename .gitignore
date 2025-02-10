@@ -2,3 +2,4 @@ bin/*
 dpdk/*
 dpdk
 .gdb_history
+*.traffic

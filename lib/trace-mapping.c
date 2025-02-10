@@ -13,7 +13,8 @@
 #include "libcommon/lib/thread-sync.h"
 #include "libcommon/lib/perf.h"
 
-#define NUM_FIELDS  5
+// #define NUM_FIELDS  5
+#define NUM_FIELDS  8  // Annus
 
 #define NUM_WORKERS 8
 
@@ -116,6 +117,7 @@ load_mapping_from_file(void *args)
     uint32_t hash;
     int line_num;
     long value;
+    char *str_value = malloc(RTE_ETHER_ADDR_FMT_SIZE);
     FILE *f;
 
     line_num = 0;
@@ -133,35 +135,128 @@ load_mapping_from_file(void *args)
         packet = malloc(sizeof(*packet));
         packet->locality = line_num;
 
-        if (fscanf(f, "%d:", &packet->priority) != 1) {
+        if (fscanf(f, "%d,", &packet->priority) != 1) {
             break;
         }
+        // printf("packet->priority = %d\n", packet->priority);
 
+        /* Annus
+        Flow fields:
+            ["dl_type", "dl_src", "dl_dst", "nw_proto", "nw_src",
+             "nw_dst", "tp_src", "tp_dst", "priority", "actions"]
+        */
         /* Get 5-tuple */
         for (int i=0; i<NUM_FIELDS; ++i) {
-            if (!fscanf(f, "%ld", &value)) {
-                printf("Cannot process rule in line %d"
-                       "(priority %d): got only %d/%d headers!",
-                       line_num+1,
-                       packet->priority,
-                       i,
-                       NUM_FIELDS);
-            }
             switch (i) {
             case 0:
-                packet->ftuple.ip_proto = value;
+                if (!fscanf(f, "%ld,", &value)) {
+                    printf("Cannot process rule in line %d"
+                           "(priority %d): got only %d/%d headers!",
+                           line_num+1,
+                           packet->priority,
+                           i,
+                           NUM_FIELDS);
+                }
+                packet->ftuple.eth_proto = rte_cpu_to_be_16(value);
+                // printf("packet->eth_proto = %ld\n", packet->ftuple.eth_proto);
                 break;
             case 1:
-                packet->ftuple.src_ip = rte_cpu_to_be_32(value);
+                if (!fscanf(f, "%s,", str_value)) {
+                    printf("Cannot process rule in line %d"
+                           "(priority %d): got only %d/%d headers!",
+                           line_num+1,
+                           packet->priority,
+                           i,
+                           NUM_FIELDS);
+                }
+
+                rte_ether_unformat_addr(str_value, &packet->ftuple.src_eth);
+                // printf("packet->src_eth = %02X:%02X:%02X:%02X:%02X:%02X\n",
+                //     packet->ftuple.src_eth.addr_bytes[0],
+                //     packet->ftuple.src_eth.addr_bytes[1],
+                //     packet->ftuple.src_eth.addr_bytes[2],
+                //     packet->ftuple.src_eth.addr_bytes[3],
+                //     packet->ftuple.src_eth.addr_bytes[4],
+                //     packet->ftuple.src_eth.addr_bytes[5]);
                 break;
             case 2:
-                packet->ftuple.dst_ip = rte_cpu_to_be_32(value);
+                if (!fscanf(f, "%s,", str_value)) {
+                    printf("Cannot process rule in line %d"
+                           "(priority %d): got only %d/%d headers!",
+                           line_num+1,
+                           packet->priority,
+                           i,
+                           NUM_FIELDS);
+                }
+
+                rte_ether_unformat_addr(str_value, &packet->ftuple.dst_eth);
+                // printf("packet->dst_eth = %02X:%02X:%02X:%02X:%02X:%02X\n",
+                //     packet->ftuple.dst_eth.addr_bytes[0],
+                //     packet->ftuple.dst_eth.addr_bytes[1],
+                //     packet->ftuple.dst_eth.addr_bytes[2],
+                //     packet->ftuple.dst_eth.addr_bytes[3],
+                //     packet->ftuple.dst_eth.addr_bytes[4],
+                //     packet->ftuple.dst_eth.addr_bytes[5]);
                 break;
             case 3:
-                packet->ftuple.src_port = rte_cpu_to_be_16(value);
+                if (!fscanf(f, "%ld,", &value)) {
+                    printf("Cannot process rule in line %d"
+                           "(priority %d): got only %d/%d headers!",
+                           line_num+1,
+                           packet->priority,
+                           i,
+                           NUM_FIELDS);
+                }
+                packet->ftuple.ip_proto = value;
+                // printf("packet->ip_proto = %ld\n", packet->ftuple.ip_proto);
                 break;
             case 4:
+                if (!fscanf(f, "%ld,", &value)) {
+                    printf("Cannot process rule in line %d"
+                           "(priority %d): got only %d/%d headers!",
+                           line_num+1,
+                           packet->priority,
+                           i,
+                           NUM_FIELDS);
+                }
+                packet->ftuple.src_ip = rte_cpu_to_be_32(value);
+                // printf("packet->src_ip = %ld\n", packet->ftuple.src_ip);
+                break;
+            case 5:
+                if (!fscanf(f, "%ld,", &value)) {
+                    printf("Cannot process rule in line %d"
+                           "(priority %d): got only %d/%d headers!",
+                           line_num+1,
+                           packet->priority,
+                           i,
+                           NUM_FIELDS);
+                }
+                packet->ftuple.dst_ip = rte_cpu_to_be_32(value);
+                // printf("packet->dst_ip = %ld\n", packet->ftuple.dst_ip);
+                break;
+            case 6:
+                if (!fscanf(f, "%ld,", &value)) {
+                    printf("Cannot process rule in line %d"
+                           "(priority %d): got only %d/%d headers!",
+                           line_num+1,
+                           packet->priority,
+                           i,
+                           NUM_FIELDS);
+                }
+                packet->ftuple.src_port = rte_cpu_to_be_16(value);
+                // printf("packet->src_port = %ld\n", packet->ftuple.src_port);
+                break;
+            case 7:
+                if (!fscanf(f, "%ld", &value)) {
+                    printf("Cannot process rule in line %d"
+                           "(priority %d): got only %d/%d headers!",
+                           line_num+1,
+                           packet->priority,
+                           i,
+                           NUM_FIELDS);
+                }
                 packet->ftuple.dst_port = rte_cpu_to_be_16(value);
+                // printf("packet->dst_port = %ld\n", packet->ftuple.dst_port);
                 break;
             }
         }

@@ -893,7 +893,7 @@ workers_start_normal()
     state_change_signal_pid();
 
     /* Start workers on all cores */
-    RTE_LCORE_FOREACH_SLAVE(lcore_id) {
+    RTE_LCORE_FOREACH_WORKER(lcore_id) {
         socket = rte_lcore_to_socket_id(lcore_id);
         if ((socket == tx_settings.socket) &&
             (tx_workers < tx_settings.tx_queues)) {
@@ -935,7 +935,7 @@ workers_start_normal()
     }
 
     /* Wait for all cores. Will get here only after signal. */
-    RTE_LCORE_FOREACH_SLAVE(lcore_id) {
+    RTE_LCORE_FOREACH_WORKER(lcore_id) {
         rte_eal_wait_lcore(lcore_id);
     }
 }

@@ -13,6 +13,9 @@
 
 /* Five tuple struct */
 struct ftuple {
+    rte_be16_t eth_proto; // Annus
+	struct rte_ether_addr src_eth;
+    struct rte_ether_addr dst_eth;
     rte_be32_t src_ip;
     rte_be32_t dst_ip;
     rte_be16_t src_port;

@@ -97,7 +97,7 @@ port_init(struct port_settings *settings)
     struct rte_eth_conf port_conf = {
         .link_speeds = ETH_LINK_SPEED_AUTONEG,
         .rxmode = {
-            .max_rx_pkt_len = RTE_ETHER_MAX_LEN,
+            .max_lro_pkt_size = RTE_ETHER_MAX_LEN,
             .offloads = DEV_RX_OFFLOAD_CHECKSUM
         },
         .txmode = {
